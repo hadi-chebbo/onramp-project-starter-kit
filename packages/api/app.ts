@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 import { errorHandler } from "./src/middleware/error-handler";
 import { rateLimiter } from "./src/middleware/rate-limiter";
 import { router } from "./src/routes";
@@ -16,6 +17,9 @@ app.use(
     credentials: true,
   }),
 );
+
+// ─── Cookie parsing ───────────────────────────────────────────────────────────
+app.use(cookieParser());
 
 // ─── Body parsing ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "1mb" }));

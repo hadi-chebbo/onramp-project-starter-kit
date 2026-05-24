@@ -3,11 +3,7 @@ import { authController } from "../controllers/auth.controller";
 import { validate } from "../middleware/validate";
 import { authenticate } from "../middleware/authenticate";
 import { authRateLimiter } from "../middleware/rate-limiter";
-import {
-  registerSchema,
-  loginSchema,
-  refreshSchema,
-} from "../schemas/auth.schemas";
+import { registerSchema, loginSchema } from "../schemas/auth.schemas";
 
 const router = Router();
 
@@ -23,7 +19,7 @@ router.post(
   validate(loginSchema),
   authController.login,
 );
-router.post("/refresh", validate(refreshSchema), authController.refresh);
+router.post("/refresh", authController.refresh);
 router.post("/logout", authenticate, authController.logout);
 router.get("/me", authenticate, authController.me);
 

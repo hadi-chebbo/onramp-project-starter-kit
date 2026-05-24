@@ -28,31 +28,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore session on mount
+  // Restore session on mount — access token cookie is sent automatically
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
-
     apiClient
       .get<{ data: AuthUser }>("/auth/me")
       .then(({ data }) => setUser(data.data))
-      .catch(() => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-      })
+      .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
   }, []);
 
   async function login(email: string, password: string): Promise<void> {
     const { data } = await apiClient.post<{
-      data: { user: AuthUser; accessToken: string; refreshToken: string };
+      data: { user: AuthUser };
     }>("/auth/login", { email, password });
-
-    localStorage.setItem("accessToken", data.data.accessToken);
-    localStorage.setItem("refreshToken", data.data.refreshToken);
     setUser(data.data.user);
   }
 
@@ -68,8 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await apiClient.post("/auth/logout");
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
       setUser(null);
     }
   }

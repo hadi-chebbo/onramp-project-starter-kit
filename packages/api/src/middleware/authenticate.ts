@@ -16,14 +16,12 @@ export function authenticate(
   res: Response,
   next: NextFunction,
 ): void {
-  const authHeader = req.headers.authorization;
+  const token = req.cookies?.accessToken as string | undefined;
 
-  if (!authHeader?.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Missing or invalid authorization header" });
+  if (!token) {
+    res.status(401).json({ error: "Authentication required" });
     return;
   }
-
-  const token = authHeader.slice(7);
 
   try {
     req.user = verifyAccessToken(token);

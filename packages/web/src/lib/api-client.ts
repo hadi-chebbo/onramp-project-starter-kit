@@ -6,16 +6,7 @@ export const apiClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach access token to every request
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Refresh token on 401
+// Refresh the access token cookie on 401, then retry the original request
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -26,27 +17,14 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (!refreshToken) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        window.location.href = "/login";
-        return Promise.reject(error);
-      }
-
       try {
-        const { data } = await axios.post("/api/auth/refresh", {
-          refreshToken,
-        });
-        const { accessToken, refreshToken: newRefresh } = data.data;
-        localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("refreshToken", newRefresh);
-        originalRequest.headers!.Authorization = `Bearer ${accessToken}`;
+        // Refresh token is sent automatically via HttpOnly cookie
+        await axios.post("/api/auth/refresh", null, { withCredentials: true });
         return apiClient(originalRequest);
       } catch {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        window.location.href = "/login";
+        // Let the caller decide what to do (e.g. AuthProvider sets user=null,
+        // protected routes redirect to /login). Never redirect here — that would
+        // cause an infinite remount loop.
         return Promise.reject(error);
       }
     }
